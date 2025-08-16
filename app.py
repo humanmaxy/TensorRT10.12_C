@@ -132,6 +132,18 @@ metrics_placeholder = st.empty()
 image_preview_placeholder = st.empty()
 
 if start_train:
+	# Preflight dataset path checks to avoid runtime errors
+	images_train_dir = Path(dataset_root) / train_rel
+	images_val_dir = Path(dataset_root) / val_rel
+	labels_train_dir = Path(dataset_root) / labels_train_rel if labels_train_rel else Path(dataset_root) / train_rel.replace('images', 'labels')
+	labels_val_dir = Path(dataset_root) / labels_val_rel if labels_val_rel else Path(dataset_root) / val_rel.replace('images', 'labels')
+	missing = []
+	for p in [images_train_dir, images_val_dir, labels_train_dir, labels_val_dir]:
+		if not p.exists():
+			missing.append(str(p))
+	if missing:
+		st.error('以下路径不存在，请在侧边栏修正数据集根目录或相对路径后再开始训练:\n' + '\n'.join(missing))
+		st.stop()
 	st.toast('开始训练...', icon='✅')
 	model = YOLO(model_source)
 	kwargs = dict(
