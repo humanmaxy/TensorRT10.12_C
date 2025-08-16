@@ -1,0 +1,13 @@
+# YOLO dataset config for surface defect detection
+# Update 'path' to your dataset root and 'names' to your classes
+
+path: /workspace/datasets/surface_defect
+train: images/train
+val: images/val
+# test: images/test  # optional
+
+# number of classes
+nc: 3
+
+# class names (edit as needed)
+names: [scratch, dent, crack]
