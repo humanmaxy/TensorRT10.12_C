@@ -7,8 +7,6 @@ from pathlib import Path
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from ultralytics import YOLO
-import ultralytics as ul
 
 # Paths
 WORKDIR = Path(__file__).resolve().parent
@@ -54,12 +52,8 @@ with st.sidebar:
 
 	start_train = st.button('开始训练', type='primary')
 
-# Load base model YAML text (custom or built-in)
-if DEFAULT_MODEL_YAML.exists():
-	model_yaml_text = DEFAULT_MODEL_YAML.read_text()
-else:
-	base_yaml = Path(ul.__file__).resolve().parent / 'cfg' / 'models' / '11' / 'yolo11.yaml'
-	model_yaml_text = base_yaml.read_text() if base_yaml.exists() else ''
+# Load base model YAML text (custom only to avoid heavy imports); otherwise use pretrained weights later
+model_yaml_text = DEFAULT_MODEL_YAML.read_text() if DEFAULT_MODEL_YAML.exists() else ''
 
 model_source = None
 if model_yaml_text:
@@ -94,7 +88,7 @@ if model_yaml_text:
 	temp_model_yaml.write_text(model_yaml_text)
 	model_source = str(temp_model_yaml)
 else:
-	# final fallback to pretrained PT
+	# final fallback to pretrained PT (avoid importing ultralytics until training)
 	model_source = 'yolo11n.pt'
 
 # Create data YAML dynamically
@@ -144,6 +138,8 @@ if start_train:
 	if missing:
 		st.error('以下路径不存在，请在侧边栏修正数据集根目录或相对路径后再开始训练:\n' + '\n'.join(missing))
 		st.stop()
+	# Lazy import to avoid DLL load until training
+	from ultralytics import YOLO
 	st.toast('开始训练...', icon='✅')
 	model = YOLO(model_source)
 	kwargs = dict(
