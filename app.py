@@ -51,6 +51,10 @@ with st.sidebar:
 	device = st.text_input('设备', '0')
 	exp_name = st.text_input('实验名', f'yolo11-surface-p2-{int(time.time())}')
 
+	st.header('预训练权重')
+	use_builtin_pretrained = st.checkbox('使用内置预训练权重（与模型匹配）', value=False)
+	custom_weights = st.text_input('自定义预训练权重路径(.pt，可留空)', '')
+
 	start_train = st.button('开始训练', type='primary')
 
 # Load base model YAML text (custom only to avoid heavy imports); otherwise use pretrained weights later
@@ -143,6 +147,11 @@ if start_train:
 	from ultralytics import YOLO
 	st.toast('开始训练...', icon='✅')
 	model = YOLO(model_source)
+	# Load custom pretrained weights if provided
+	if custom_weights.strip():
+		model.load(custom_weights.strip())
+	# Decide built-in pretrained flag
+	use_pretrained_flag = (use_builtin_pretrained and not custom_weights.strip())
 	kwargs = dict(
 		data=str(temp_data_yaml),
 		imgsz=imgsz,
@@ -154,7 +163,7 @@ if start_train:
 		device=device,
 		project=str(RUNS_DIR),
 		name=exp_name,
-		pretrained=True,
+		pretrained=use_pretrained_flag,
 	)
 	results = model.train(**kwargs)
 	# After training, parse results.csv
