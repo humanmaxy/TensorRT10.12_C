@@ -51,13 +51,13 @@ with st.sidebar:
 	device = st.text_input('设备', '0')
 	exp_name = st.text_input('实验名', f'yolo11-surface-p2-{int(time.time())}')
 
-	st.header('预训练权重')
-	use_builtin_pretrained = st.checkbox('使用内置预训练权重（与模型匹配）', value=False)
-	custom_weights = st.text_input('自定义预训练权重路径(.pt，可留空)', '')
+	st.header('预训练权重（离线）')
+	st.caption('离线模式：不下载任何权重。可选填写本地 .pt 路径，否则从零训练。')
+	custom_weights = st.text_input('本地预训练权重路径(.pt，可留空)', '')
 
 	start_train = st.button('开始训练', type='primary')
 
-# Load base model YAML text (custom only to avoid heavy imports); otherwise use pretrained weights later
+# Load base model YAML text (custom only to avoid heavy imports); otherwise use YAML fallback later
 model_yaml_text = DEFAULT_MODEL_YAML.read_text() if DEFAULT_MODEL_YAML.exists() else ''
 
 model_source = None
@@ -93,7 +93,7 @@ if model_yaml_text:
 	temp_model_yaml.write_text(model_yaml_text)
 	model_source = str(temp_model_yaml)
 else:
-	# final fallback to pretrained PT (avoid importing ultralytics until training)
+	# final fallback to local YAML name (no download)
 	model_source = 'yolo11.yaml'
 
 # Create data YAML dynamically
@@ -119,7 +119,7 @@ temp_data_yaml.write_text(data_yaml_text)
 col1, col2 = st.columns(2)
 with col1:
 	st.subheader('模型配置预览')
-	st.code(model_yaml_text if model_yaml_text else 'Using pretrained weights: ' + str(model_source), language='yaml')
+	st.code(model_yaml_text if model_yaml_text else 'Using YAML: ' + str(model_source), language='yaml')
 with col2:
 	st.subheader('数据配置预览')
 	st.code(data_yaml_text, language='yaml')
@@ -147,11 +147,10 @@ if start_train:
 	from ultralytics import YOLO
 	st.toast('开始训练...', icon='✅')
 	model = YOLO(model_source)
-	# Load custom pretrained weights if provided
+	# Load custom pretrained weights if provided (offline local only)
 	if custom_weights.strip():
 		model.load(custom_weights.strip())
-	# Decide built-in pretrained flag
-	use_pretrained_flag = (use_builtin_pretrained and not custom_weights.strip())
+	# Always disable built-in pretrained to avoid online download in offline mode
 	kwargs = dict(
 		data=str(temp_data_yaml),
 		imgsz=imgsz,
@@ -163,7 +162,7 @@ if start_train:
 		device=device,
 		project=str(RUNS_DIR),
 		name=exp_name,
-		pretrained=use_pretrained_flag,
+		pretrained=False,
 	)
 	results = model.train(**kwargs)
 	# After training, parse results.csv

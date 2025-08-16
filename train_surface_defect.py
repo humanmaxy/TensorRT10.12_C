@@ -14,8 +14,8 @@ def parse_args():
 	parser.add_argument('--project', type=str, default='runs/train')
 	parser.add_argument('--name', type=str, default='yolo11-surface-p2')
 	parser.add_argument('--resume', action='store_true')
-	parser.add_argument('--weights', type=str, default='', help='预训练权重路径(.pt)。为空表示不指定')
-	parser.add_argument('--pretrained', action='store_true', help='使用内置预训练权重（与当前模型匹配）')
+	parser.add_argument('--weights', type=str, default='', help='本地预训练权重路径(.pt)。为空表示不指定')
+	parser.add_argument('--offline', action='store_true', help='离线模式，不从互联网下载任何权重（默认建议开启）')
 	return parser.parse_args()
 
 
@@ -55,8 +55,8 @@ def main():
 		patience=100,
 	)
 
-	# If offline and no custom weights, do not set pretrained True to avoid download
-	use_pretrained = (args.pretrained and bool(args.weights == ''))
+	# Offline-safe: do not trigger auto-downloads. Only use local weights if provided.
+	pretrained_flag = False
 
 	if args.resume:
 		model.train(resume=True)
@@ -65,7 +65,7 @@ def main():
 			data=args.data,
 			project=args.project,
 			name=args.name,
-			pretrained=use_pretrained,
+			pretrained=pretrained_flag,
 			**hyp,
 		)
 
