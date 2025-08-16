@@ -8,7 +8,7 @@ def parse_args():
 	parser.add_argument('--model', type=str, default='models/yolo11_surface_defect_p2.yaml')
 	parser.add_argument('--data', type=str, default='data/surface_defect.yaml')
 	parser.add_argument('--epochs', type=int, default=200)
-	parser.add_argument('--batch', type=int, default=16)
+	parser.add_argument('--batch', type=int, default=4)
 	parser.add_argument('--imgsz', type=int, default=640)
 	parser.add_argument('--device', type=str, default='0')
 	parser.add_argument('--project', type=str, default='runs/train')
@@ -46,7 +46,7 @@ def main():
 		box=7.5,
 		cls=0.7,
 		dfl=1.5,
-		workers=8,
+		workers=0,
 		patience=100,
 	)
 

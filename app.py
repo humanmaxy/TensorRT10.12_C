@@ -44,7 +44,8 @@ with st.sidebar:
 	st.header('训练配置')
 	imgsz = st.slider('图像尺寸', 448, 1280, 640, 32)
 	epochs = st.slider('训练轮数', 10, 500, 200, 10)
-	batch = st.slider('批大小', 4, 64, 16, 2)
+	batch = st.slider('批大小', 1, 32, 4, 1)
+	workers = st.slider('DataLoader workers', 0, 8, 0, 1)
 	optimizer = st.selectbox('优化器', ['SGD','Adam','AdamW','auto'], index=0)
 	cos_lr = st.checkbox('Cosine LR', value=True)
 	device = st.text_input('设备', '0')
@@ -147,6 +148,7 @@ if start_train:
 		imgsz=imgsz,
 		epochs=epochs,
 		batch=batch,
+		workers=workers,
 		optimizer=optimizer,
 		cos_lr=cos_lr,
 		device=device,
