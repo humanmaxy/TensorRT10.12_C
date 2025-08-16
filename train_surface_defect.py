@@ -21,7 +21,7 @@ def parse_args():
 
 def main():
 	args = parse_args()
-	# Create model
+	# Create model (always from YAML to avoid online downloads)
 	model = YOLO(args.model)
 	# Load custom pretrained weights if provided
 	if args.weights:
@@ -55,8 +55,8 @@ def main():
 		patience=100,
 	)
 
-	# If custom weights are provided, do not also auto-load built-in pretrained
-	use_pretrained = (args.pretrained and not args.weights)
+	# If offline and no custom weights, do not set pretrained True to avoid download
+	use_pretrained = (args.pretrained and bool(args.weights == ''))
 
 	if args.resume:
 		model.train(resume=True)

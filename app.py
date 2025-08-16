@@ -94,7 +94,7 @@ if model_yaml_text:
 	model_source = str(temp_model_yaml)
 else:
 	# final fallback to pretrained PT (avoid importing ultralytics until training)
-	model_source = 'yolo11n.pt'
+	model_source = 'yolo11.yaml'
 
 # Create data YAML dynamically
 names = [x.strip() for x in class_names_str.split(',') if x.strip()]
