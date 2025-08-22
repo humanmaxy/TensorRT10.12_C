@@ -29,6 +29,9 @@ python3 -m venv /workspace/.venv
   --data /workspace/data/surface_defect.yaml \
   --epochs 200 --batch 16 --imgsz 640 --device 0 \
   --project runs/train --name yolo11-surface-p2
+# Notes:
+# - Small-defect optimized: strong mosaic/mixup/copy-paste with low conf during training
+# - To resume: add --resume
 ```
 
 ## Inference (CLI)
@@ -36,7 +39,10 @@ python3 -m venv /workspace/.venv
 /workspace/.venv/bin/python /workspace/infer_surface_defect.py \
   --weights runs/train/yolo11-surface-p2/weights/best.pt \
   --source /path/to/images_or_dir \
-  --imgsz 640 --conf 0.25 --iou 0.6 --device 0 --save
+  --imgsz 640 --conf 0.01 --iou 0.5 --max_det 3000 --agnostic --augment --device 0 --save
+# Tips:
+# - Use very low conf with agnostic NMS to maximize recall (then filter downstream)
+# - --augment enables TTA; for speed-critical runs, omit it
 ```
 
 ## GUI (Streamlit)
