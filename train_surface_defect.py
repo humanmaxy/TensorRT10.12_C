@@ -2,6 +2,12 @@ import os
 import argparse
 from ultralytics import YOLO
 
+try:
+	from custom_modules import register_custom_modules
+	register_custom_modules()
+except Exception:
+	pass
+
 
 def parse_args():
 	parser = argparse.ArgumentParser()
@@ -40,19 +46,24 @@ def main():
 		hsv_h=0.005,
 		hsv_s=0.5,
 		hsv_v=0.3,
-		mosaic=0.8,
-		mixup=0.1,
+		mosaic=0.9,
+		mixup=0.2,
+		copy_paste=0.3,
 		flipud=0.0,
 		fliplr=0.5,
 		translate=0.05,
-		scale=0.4,
+		scale=0.5,
 		shear=0.0,
 		perspective=0.0,
-		box=7.5,
-		cls=0.7,
-		dfl=1.5,
+		box=10.0,
+		cls=0.5,
+		dfl=2.0,
+		multi_scale=True,
+		cache='ram',
+		conf=0.01,
+		iou=0.5,
 		workers=0,
-		patience=100,
+		patience=120,
 	)
 
 	# Offline-safe: do not trigger auto-downloads. Only use local weights if provided.
