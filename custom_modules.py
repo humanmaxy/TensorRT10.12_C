@@ -55,3 +55,10 @@ def register_custom_modules() -> None:
 	from ultralytics.nn import modules as _ym
 	setattr(_ym, 'SEBlock', SEBlock)
 	setattr(_ym, 'C3k2_SE', C3k2_SE)
+	# Also inject into tasks module globals so parse_model `globals()[m]` can find them
+	try:
+		from ultralytics.nn import tasks as _yt
+		setattr(_yt, 'SEBlock', SEBlock)
+		setattr(_yt, 'C3k2_SE', C3k2_SE)
+	except Exception:
+		pass
