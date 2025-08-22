@@ -2,6 +2,12 @@ import os
 import argparse
 from ultralytics import YOLO
 
+try:
+	from custom_modules import register_custom_modules
+	register_custom_modules()
+except Exception:
+	pass
+
 
 def parse_args():
 	parser = argparse.ArgumentParser()

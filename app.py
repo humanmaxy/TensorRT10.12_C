@@ -8,6 +8,13 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
+# Register custom modules for YAML resolution
+try:
+	from custom_modules import register_custom_modules
+	register_custom_modules()
+except Exception:
+	pass
+
 # Paths
 WORKDIR = Path(__file__).resolve().parent
 DEFAULT_MODEL_YAML = WORKDIR / 'models' / 'yolo11_surface_defect_p2.yaml'

@@ -7,6 +7,12 @@ import numpy as np
 import torch
 from torchvision.ops import nms
 
+try:
+	from custom_modules import register_custom_modules
+	register_custom_modules()
+except Exception:
+	pass
+
 
 def parse_args():
 	parser = argparse.ArgumentParser()

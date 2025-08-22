@@ -1,4 +1,4 @@
-# Surface Defect Detection on YOLOv11 (with P2 head)
+# Surface Defect Detection on YOLOv11 (with P2 head + SE attention on small-object paths)
 
 ## Setup
 
@@ -30,7 +30,8 @@ python3 -m venv /workspace/.venv
   --epochs 200 --batch 16 --imgsz 640 --device 0 \
   --project runs/train --name yolo11-surface-p2
 # Notes:
-# - Small-defect optimized: strong mosaic/mixup/copy-paste with low conf during training
+# - Small-defect optimized: P2 head widened + SE attention on P2/P3/P4
+# - Strong mosaic/mixup/copy-paste with low conf during training
 # - To resume: add --resume
 ```
 
