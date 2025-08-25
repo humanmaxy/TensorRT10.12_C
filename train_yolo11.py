@@ -1,7 +1,5 @@
 import sys, os
 import argparse
-import glob
-import time
 from typing import Optional
 
 # Prefer absolute paths for reliability
@@ -58,32 +56,21 @@ def ensure_dirs(project_dir: str, run_name: str) -> str:
 	return run_dir
 
 
-def find_latest_last_pt(search_root: str) -> Optional[str]:
-	"""Find the most recent weights/last.pt under search_root."""
-	pattern = os.path.join(to_abs_path(search_root), '**', 'weights', 'last.pt')
-	candidates = glob.glob(pattern, recursive=True)
-	if not candidates:
-		return None
-	candidates.sort(key=lambda p: os.path.getmtime(p), reverse=True)
-	return candidates[0]
-
-
 def resolve_resume_checkpoint(args, run_dir: str) -> Optional[str]:
 	"""Resolve which checkpoint to resume from.
-	Priority:
-	1) --weights if it is an existing .pt
-	2) {project}/{name}/weights/last.pt
-	3) Most recent last.pt under --project
+	Rule:
+	1) If --weights is a valid .pt, use it
+	2) Else use {project}/{name}/weights/best.pt if it exists
+	3) Else return None (fresh start)
 	"""
 	if args.weights and os.path.isfile(to_abs_path(args.weights)):
 		return to_abs_path(args.weights)
 
-	last_in_named_run = os.path.join(run_dir, 'weights', 'last.pt')
-	if os.path.isfile(last_in_named_run):
-		return last_in_named_run
+	best_in_named_run = os.path.join(run_dir, 'weights', 'best.pt')
+	if os.path.isfile(best_in_named_run):
+		return best_in_named_run
 
-	latest_any = find_latest_last_pt(args.project)
-	return latest_any
+	return None
 
 
 def build_hyp(args):
@@ -125,7 +112,7 @@ def build_hyp(args):
 def main():
 	args = parse_args()
 
-	# Resolve and create save directories early to avoid "No such file or directory" on saving last.pt
+	# Resolve and create save directories early to avoid "No such file or directory" on saving weights
 	run_dir = ensure_dirs(args.project, args.name)
 	project_abs = to_abs_path(args.project)
 	print(f'Project directory: {project_abs}')
@@ -136,23 +123,21 @@ def main():
 
 	if args.resume:
 		ckpt_path = resolve_resume_checkpoint(args, run_dir)
-		if not ckpt_path or not os.path.isfile(ckpt_path):
-			print('未找到可用于继续训练的权重。请通过 --weights 指定一个有效的 .pt，或先进行一次完整训练。')
-			print(f'已检查路径: {ckpt_path or "<none>"}')
+		if ckpt_path and os.path.isfile(ckpt_path):
+			print(f'Resuming from: {ckpt_path}')
+			model = YOLO(ckpt_path)
+			model.train(
+				resume=True,
+				project=project_abs,
+				name=args.name,
+				exist_ok=True,
+				device=args.device,
+				workers=args.workers,
+				save_period=args.save_period,
+			)
 			return
-
-		print(f'Resuming from: {ckpt_path}')
-		model = YOLO(ckpt_path)
-		model.train(
-			resume=True,
-			project=project_abs,
-			name=args.name,
-			exist_ok=True,
-			device=args.device,
-			workers=args.workers,
-			save_period=args.save_period,
-		)
-		return
+		else:
+			print('未找到 best.pt，改为重新开始训练。')
 
 	# Fresh training path
 	model = YOLO(to_abs_path(args.model))
