@@ -8,16 +8,17 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# Register custom modules for YAML resolution
+# Register custom modules and enable EIoU loss for YAML resolution
 try:
-	from custom_modules import register_custom_modules
+	from custom_modules import register_custom_modules, enable_eiou_loss
+	enable_eiou_loss()
 	register_custom_modules()
 except Exception:
 	pass
 
 # Paths
 WORKDIR = Path(__file__).resolve().parent
-DEFAULT_MODEL_YAML = WORKDIR / 'models' / 'yolo11_surface_defect_p2.yaml'
+DEFAULT_MODEL_YAML = WORKDIR / 'models' / 'yolo11_surface_defect_p1p2.yaml'
 DEFAULT_DATA_YAML = WORKDIR / 'data' / 'surface_defect.yaml'
 RUNS_DIR = WORKDIR / 'runs' / 'train'
 
@@ -56,7 +57,7 @@ with st.sidebar:
 	optimizer = st.selectbox('优化器', ['SGD','Adam','AdamW','auto'], index=0)
 	cos_lr = st.checkbox('Cosine LR', value=True)
 	device = st.text_input('设备', '0')
-	exp_name = st.text_input('实验名', f'yolo11-surface-p2-{int(time.time())}')
+	exp_name = st.text_input('实验名', f'yolo11-surface-p1p2-{int(time.time())}')
 
 	st.header('预训练权重（离线）')
 	st.caption('离线模式：不下载任何权重。可选填写本地 .pt 路径，否则从零训练。')
@@ -88,9 +89,10 @@ if model_yaml_text:
 		model_yaml_text = '\n'.join(lines)
 	except StopIteration:
 		pass
-	# Detect heads selection for P2 toggle (only if our custom four-head exists)
+	# Detect heads selection for P2 toggle (handle both 4-head and 5-head variants)
 	if not use_p2:
 		model_yaml_text = model_yaml_text.replace('[[19, 22, 25, 28], 1, Detect, [nc]]', '[[22, 25, 28], 1, Detect, [nc]]')
+		model_yaml_text = model_yaml_text.replace('[[22, 26, 30, 33, 36], 1, Detect, [nc]]', '[[26, 30, 33, 36], 1, Detect, [nc]]')
 	# scale selection: map to 'n'
 	scales_map = {'n':'0.50, 0.25, 1024','s':'0.50, 0.50, 1024','m':'0.50, 1.00, 512','l':'1.00, 1.00, 512','x':'1.00, 1.50, 512'}
 	model_yaml_text = model_yaml_text.replace('n: [0.50, 0.25, 1024]', f"n: [{scales_map[scale]}]")
@@ -193,5 +195,5 @@ if start_train:
 					cols[i % 4].image(p, use_container_width=True)
 			else:
 				image_preview_placeholder.info('未找到预测图片')
-	else:
-		st.error('训练日志未找到，可能训练失败或目录结构变化')
+else:
+	st.error('训练日志未找到，可能训练失败或目录结构变化')

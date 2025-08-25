@@ -1,0 +1,78 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
+# YOLO11 with P1/2/4 outputs for industrial tiny-defect detection
+# Enhancements:
+# - RFD downsampling to preserve fine textures
+# - SPDConv in shallow backbone for anisotropic shapes
+# - P1 head (320x) for 3-5px targets, HAttention after P1/P2 blocks
+# - DWRSeg on P2 branch to expand receptive field for long narrow targets
+
+# Parameters
+nc: 80  # number of classes (override by dataset)
+scales:  # [depth, width, max_channels]
+  n: [0.50, 0.25, 1024]
+  s: [0.50, 0.50, 1024]
+  m: [0.50, 1.00, 512]
+  l: [1.00, 1.00, 512]
+  x: [1.00, 1.50, 512]
+
+# Backbone
+backbone:
+  # [from, repeats, module, args]
+  - [-1, 1, RFD, [64, 3, 2]]         # 0-P1/2 (RFD instead of Conv)
+  - [-1, 1, SPDConv, [128, 3, 2]]    # 1-P2/4 (dynamic anisotropic)
+  - [-1, 2, C3k2, [256, False, 0.25]]
+  - [-1, 1, RFD, [256, 3, 2]]        # 3-P3/8
+  - [-1, 2, C3k2, [512, False, 0.25]]
+  - [-1, 1, Conv, [512, 3, 2]]       # 5-P4/16
+  - [-1, 2, C3k2, [512, True]]
+  - [-1, 1, Conv, [1024, 3, 2]]      # 7-P5/32
+  - [-1, 2, C3k2, [1024, True]]
+  - [-1, 1, SPPF, [1024, 5]]         # 9
+  - [-1, 2, C2PSA, [1024]]           # 10
+
+# Head with P1, P2 outputs enhanced
+head:
+  # up from P5->P4
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
+  - [[-1, 6], 1, Concat, [1]]             # cat backbone P4
+  - [-1, 2, C3k2_SE, [512, False]]        # 13 (P4)
+
+  # P3
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
+  - [[-1, 4], 1, Concat, [1]]             # cat backbone P3
+  - [-1, 2, C3k2_SE, [256, False]]        # 16 (P3)
+
+  # P2 branch (enhanced with DWRSeg + HAttention)
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
+  - [[-1, 1], 1, Concat, [1]]             # cat backbone P2 (index 1)
+  - [-1, 2, DWRSeg, [160]]                # 19 (P2/4)
+  - [-1, 1, HAttention, []]
+
+  # New P1 branch from P2
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
+  - [[-1, 0], 1, Concat, [1]]             # cat backbone P1 (index 0)
+  - [-1, 3, C3k2, [128, False]]           # 22 (P1/2)
+  - [-1, 1, HAttention, []]
+
+  # Re-downsample and fuse upward pyramid
+  - [-1, 1, Conv, [160, 3, 2]]
+  - [[-1, 19], 1, Concat, [1]]
+  - [-1, 3, C3k2, [192, False]]           # 26 (enhanced P2)
+  - [-1, 1, HAttention, []]
+
+  - [-1, 1, Conv, [192, 3, 2]]
+  - [[-1, 16], 1, Concat, [1]]
+  - [-1, 2, C3k2_SE, [320, False]]        # 30 (P3/8)
+
+  - [-1, 1, Conv, [320, 3, 2]]
+  - [[-1, 13], 1, Concat, [1]]
+  - [-1, 2, C3k2_SE, [640, False]]        # 33 (P4/16)
+
+  - [-1, 1, Conv, [640, 3, 2]]
+  - [[-1, 10], 1, Concat, [1]]
+  - [-1, 2, C3k2, [1024, True]]           # 36 (P5/32)
+
+  # Detect(P1, P2, P3, P4, P5) with optional EIoU via code patch
+  # Indices map to: P1=24, P2=28, P3=31, P4=34, P5=37
+  - [[24, 28, 31, 34, 37], 1, Detect, [nc]]
