@@ -1,0 +1,61 @@
+# YOLO11 with Enhanced Backbone for Surface Defect Detection
+# 专注于backbone增强的版本，更保守但稳定
+
+# Parameters
+nc: 80  # number of classes (will be overridden by dataset)
+scales:  # [depth, width, max_channels]
+  n: [0.50, 0.25, 1024]
+  s: [0.50, 0.50, 1024]
+  m: [0.50, 1.00, 512]
+  l: [1.00, 1.00, 512]
+  x: [1.00, 1.50, 512]
+
+# 增强的Backbone - 在关键位置添加注意力
+backbone:
+  # [from, repeats, module, args]
+  - [-1, 1, Conv, [64, 3, 2]]                    # 0-P1/2
+  - [-1, 1, Conv, [128, 3, 2]]                   # 1-P2/4  
+  - [-1, 2, C3k2, [256, False, 0.25]]            # 2
+  - [-1, 1, SEAttention, []]                     # 3 - 在P2后添加SE注意力
+  - [-1, 1, Conv, [256, 3, 2]]                   # 4-P3/8
+  - [-1, 2, C3k2, [512, False, 0.25]]            # 5
+  - [-1, 1, ECA, []]                             # 6 - 在P3后添加ECA注意力
+  - [-1, 1, Conv, [512, 3, 2]]                   # 7-P4/16
+  - [-1, 2, C3k2, [512, True]]                   # 8
+  - [-1, 1, CBAM, []]                            # 9 - 在P4后添加CBAM注意力
+  - [-1, 1, Conv, [1024, 3, 2]]                  # 10-P5/32
+  - [-1, 2, C3k2, [1024, True]]                  # 11
+  - [-1, 1, SEAttention, []]                     # 12 - 在P5后添加SE注意力
+  - [-1, 1, SPPF, [1024, 5]]                     # 13
+  - [-1, 2, C2PSA, [1024]]                       # 14
+
+# Head保持标准结构但加入少量注意力
+head:
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
+  - [[-1, 9], 1, Concat, [1]]                    # cat backbone P4 (带CBAM)
+  - [-1, 2, C3k2, [512, False]]                  # 17 (P4)
+
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
+  - [[-1, 6], 1, Concat, [1]]                    # cat backbone P3 (带ECA)
+  - [-1, 2, C3k2, [256, False]]                  # 20 (P3)
+
+  # P2分支 - 小目标检测的关键
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
+  - [[-1, 3], 1, Concat, [1]]                    # cat backbone P2 (带SE)
+  - [-1, 2, C3k2, [128, False]]                  # 23 (P2/4 - tiny)
+  - [-1, 1, SEAttention, []]                     # 24 - 小目标专用SE注意力
+
+  # Re-downsample and fuse back up the pyramid
+  - [-1, 1, Conv, [128, 3, 2]]
+  - [[-1, 20], 1, Concat, [1]]
+  - [-1, 2, C3k2, [256, False]]                  # 27 (P3/8 - small)
+
+  - [-1, 1, Conv, [256, 3, 2]]
+  - [[-1, 17], 1, Concat, [1]]
+  - [-1, 2, C3k2, [512, False]]                  # 30 (P4/16 - medium)
+
+  - [-1, 1, Conv, [512, 3, 2]]
+  - [[-1, 14], 1, Concat, [1]]
+  - [-1, 2, C3k2, [1024, True]]                  # 33 (P5/32 - large)
+
+  - [[24, 27, 30, 33], 1, Detect, [nc]]          # Detect(P2, P3, P4, P5)

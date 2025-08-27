@@ -4,11 +4,12 @@ from ultralytics import YOLO
 
 # Import custom modules for enhanced attention mechanisms
 import custom_modules_fixed  # This automatically registers our custom modules
+import advanced_modules      # Import advanced enhancement modules
 
 
 def parse_args():
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--model', type=str, default='models/yolo11_surface_defect_p2_coordatt_final.yaml')
+	parser.add_argument('--model', type=str, default='models/yolo11_surface_defect_backbone_enhanced.yaml')
 	parser.add_argument('--data', type=str, default='data/surface_defect.yaml')
 	parser.add_argument('--epochs', type=int, default=200)
 	parser.add_argument('--batch', type=int, default=4)
@@ -27,7 +28,7 @@ def main():
 	
 	print("🚀 Enhanced YOLO11 Training with Coordinate Attention")
 	print(f"Model: {args.model}")
-	print("Custom modules loaded: CoordAtt (Identity), CoordAttFull")
+	print("Enhanced modules loaded: SE, CBAM, ECA, SPP_Enhanced, FPN_Enhanced, RepVGG, etc.")
 	
 	# Create model (always from YAML to avoid online downloads)
 	model = YOLO(args.model)
