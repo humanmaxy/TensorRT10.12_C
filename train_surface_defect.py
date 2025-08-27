@@ -3,7 +3,7 @@ import argparse
 from ultralytics import YOLO
 
 # Import custom modules for enhanced attention mechanisms
-import custom_modules  # This automatically registers our custom modules
+import custom_modules_fixed  # This automatically registers our custom modules
 
 
 def parse_args():
@@ -27,7 +27,7 @@ def main():
 	
 	print("🚀 Enhanced YOLO11 Training with Coordinate Attention")
 	print(f"Model: {args.model}")
-	print("Custom modules loaded: CoordAtt, C3k2_CoordAtt, C2f_CoordAtt, EnhancedConv")
+	print("Custom modules loaded: CoordAtt (Identity), CoordAttFull")
 	
 	# Create model (always from YAML to avoid online downloads)
 	model = YOLO(args.model)
