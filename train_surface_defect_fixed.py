@@ -2,21 +2,21 @@ import os
 import argparse
 from ultralytics import YOLO
 
-# Import custom modules for enhanced attention mechanisms
-import custom_modules_fixed  # This automatically registers our custom modules
-import advanced_modules      # Import advanced enhancement modules
+# Import ONLY the fixed modules (avoid problematic ones)
+import custom_modules_fixed  # Basic attention modules
+import advanced_modules_fixed  # Fixed advanced modules (no C3k2_Enhanced)
 
 
 def parse_args():
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--model', type=str, default='models/yolo11_surface_defect_safe_enhanced.yaml')
+	parser.add_argument('--model', type=str, default='models/yolo11_surface_defect_final_fixed.yaml')
 	parser.add_argument('--data', type=str, default='data/surface_defect.yaml')
 	parser.add_argument('--epochs', type=int, default=200)
 	parser.add_argument('--batch', type=int, default=4)
 	parser.add_argument('--imgsz', type=int, default=640)
 	parser.add_argument('--device', type=str, default='0')
 	parser.add_argument('--project', type=str, default='runs/train')
-	parser.add_argument('--name', type=str, default='yolo11-surface-p2-coordatt')
+	parser.add_argument('--name', type=str, default='yolo11-surface-p2-enhanced')
 	parser.add_argument('--resume', action='store_true')
 	parser.add_argument('--weights', type=str, default='', help='本地预训练权重路径(.pt)。为空表示不指定')
 	parser.add_argument('--offline', action='store_true', help='离线模式，不从互联网下载任何权重（默认建议开启）')
@@ -26,9 +26,9 @@ def parse_args():
 def main():
 	args = parse_args()
 	
-	print("🚀 Enhanced YOLO11 Training with Coordinate Attention")
+	print("🚀 Enhanced YOLO11 Training with Stable Attention Modules")
 	print(f"Model: {args.model}")
-	print("Enhanced modules loaded: SE, CBAM, ECA, SPP_Enhanced, FPN_Enhanced, RepVGG, etc.")
+	print("✅ Fixed modules loaded: SE, CBAM, ECA (stable versions)")
 	
 	# Create model (always from YAML to avoid online downloads)
 	model = YOLO(args.model)
@@ -36,21 +36,21 @@ def main():
 	if args.weights:
 		model.load(args.weights)
 
-	# High-precision defaults for small defects
-	# - reduce strong augmentations early; keep more resolution
+	# Optimized hyperparameters for enhanced models
 	hyp = dict(
 		imgsz=args.imgsz,
 		batch=args.batch,
 		epochs=args.epochs,
 		device=args.device,
-		optimizer='SGD',
+		optimizer='AdamW',  # Better for attention modules
+		lr0=0.001,          # Lower learning rate for stable training
 		cos_lr=True,
 		close_mosaic=20,
 		hsv_h=0.005,
 		hsv_s=0.5,
 		hsv_v=0.3,
-		mosaic=0.8,
-		mixup=0.1,
+		mosaic=0.6,         # Reduced for better attention learning
+		mixup=0.05,         # Reduced for stability
 		flipud=0.0,
 		fliplr=0.5,
 		translate=0.05,
@@ -61,10 +61,11 @@ def main():
 		cls=0.7,
 		dfl=1.5,
 		workers=0,
-		patience=100,
+		patience=120,       # Increased patience for attention modules
+		warmup_epochs=5,    # Added warmup for stability
 	)
 
-	# Offline-safe: do not trigger auto-downloads. Only use local weights if provided.
+	# Offline-safe: do not trigger auto-downloads
 	pretrained_flag = False
 
 	if args.resume:
