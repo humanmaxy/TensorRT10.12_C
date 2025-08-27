@@ -2,17 +2,20 @@ import os
 import argparse
 from ultralytics import YOLO
 
+# Import custom modules for enhanced attention mechanisms
+import custom_modules  # This automatically registers our custom modules
+
 
 def parse_args():
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--model', type=str, default='models/yolo11_surface_defect_p2.yaml')
+	parser.add_argument('--model', type=str, default='models/yolo11_surface_defect_p2_coordatt_final.yaml')
 	parser.add_argument('--data', type=str, default='data/surface_defect.yaml')
 	parser.add_argument('--epochs', type=int, default=200)
 	parser.add_argument('--batch', type=int, default=4)
 	parser.add_argument('--imgsz', type=int, default=640)
 	parser.add_argument('--device', type=str, default='0')
 	parser.add_argument('--project', type=str, default='runs/train')
-	parser.add_argument('--name', type=str, default='yolo11-surface-p2')
+	parser.add_argument('--name', type=str, default='yolo11-surface-p2-coordatt')
 	parser.add_argument('--resume', action='store_true')
 	parser.add_argument('--weights', type=str, default='', help='本地预训练权重路径(.pt)。为空表示不指定')
 	parser.add_argument('--offline', action='store_true', help='离线模式，不从互联网下载任何权重（默认建议开启）')
@@ -21,6 +24,11 @@ def parse_args():
 
 def main():
 	args = parse_args()
+	
+	print("🚀 Enhanced YOLO11 Training with Coordinate Attention")
+	print(f"Model: {args.model}")
+	print("Custom modules loaded: CoordAtt, C3k2_CoordAtt, C2f_CoordAtt, EnhancedConv")
+	
 	# Create model (always from YAML to avoid online downloads)
 	model = YOLO(args.model)
 	# Load custom pretrained weights if provided

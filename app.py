@@ -8,6 +8,9 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
+# Import custom modules for enhanced attention mechanisms
+import custom_modules  # This automatically registers our custom modules
+
 # Paths
 WORKDIR = Path(__file__).resolve().parent
 DEFAULT_MODEL_YAML = WORKDIR / 'models' / 'yolo11_surface_defect_p2.yaml'
@@ -28,6 +31,7 @@ with st.sidebar:
 	scale = st.selectbox('Model Scale (n/s/m/l/x)', ['n','s','m','l','x'], index=0)
 	use_p2 = st.checkbox('启用P2输出（更适合微小缺陷）', value=True)
 	use_c2psa = st.checkbox('启用C2PSA注意力', value=True)
+	use_coordatt = st.checkbox('启用Coordinate Attention (提升MAP)', value=True)
 	backbone_block = st.selectbox('Backbone模块类型', ['C3k2','C2f'], index=0)
 	head_block = st.selectbox('Head模块类型', ['C3k2','C2f'], index=0)
 	nc = st.number_input('类别数 (nc)', min_value=1, max_value=200, value=3, step=1)
@@ -49,7 +53,8 @@ with st.sidebar:
 	optimizer = st.selectbox('优化器', ['SGD','Adam','AdamW','auto'], index=0)
 	cos_lr = st.checkbox('Cosine LR', value=True)
 	device = st.text_input('设备', '0')
-	exp_name = st.text_input('实验名', f'yolo11-surface-p2-{int(time.time())}')
+	default_name = f'yolo11-surface-p2-coordatt-{int(time.time())}' if use_coordatt else f'yolo11-surface-p2-{int(time.time())}'
+	exp_name = st.text_input('实验名', default_name)
 
 	st.header('预训练权重（离线）')
 	st.caption('离线模式：不下载任何权重。可选填写本地 .pt 路径，否则从零训练。')
@@ -58,7 +63,15 @@ with st.sidebar:
 	start_train = st.button('开始训练', type='primary')
 
 # Load base model YAML text (custom only to avoid heavy imports); otherwise use YAML fallback later
-model_yaml_text = DEFAULT_MODEL_YAML.read_text() if DEFAULT_MODEL_YAML.exists() else ''
+if use_coordatt:
+	# Use enhanced model with Coordinate Attention
+	ENHANCED_MODEL_YAML = WORKDIR / 'models' / 'yolo11_surface_defect_p2_coordatt_final.yaml'
+	model_yaml_text = ENHANCED_MODEL_YAML.read_text() if ENHANCED_MODEL_YAML.exists() else ''
+	if not model_yaml_text:
+		st.error("Enhanced CoordAtt model config not found! Using default model.")
+		model_yaml_text = DEFAULT_MODEL_YAML.read_text() if DEFAULT_MODEL_YAML.exists() else ''
+else:
+	model_yaml_text = DEFAULT_MODEL_YAML.read_text() if DEFAULT_MODEL_YAML.exists() else ''
 
 model_source = None
 if model_yaml_text:
@@ -74,9 +87,19 @@ if model_yaml_text:
 		b_lines = lines[idx_backbone + 1:idx_head]
 		h_lines = lines[idx_head + 1:]
 		if backbone_block != 'C3k2':
-			b_lines = [ln.replace('C3k2', backbone_block) for ln in b_lines]
+			if use_coordatt:
+				# For CoordAtt model, replace enhanced versions
+				b_lines = [ln.replace('C3k2_CoordAtt', f'{backbone_block}_CoordAtt') for ln in b_lines]
+				b_lines = [ln.replace('C3k2', backbone_block) for ln in b_lines]
+			else:
+				b_lines = [ln.replace('C3k2', backbone_block) for ln in b_lines]
 		if head_block != 'C3k2':
-			h_lines = [ln.replace('C3k2', head_block) for ln in h_lines]
+			if use_coordatt:
+				# For CoordAtt model, replace enhanced versions
+				h_lines = [ln.replace('C3k2_CoordAtt', f'{head_block}_CoordAtt') for ln in h_lines]
+				h_lines = [ln.replace('C3k2', head_block) for ln in h_lines]
+			else:
+				h_lines = [ln.replace('C3k2', head_block) for ln in h_lines]
 		lines = lines[:idx_backbone + 1] + b_lines + [lines[idx_head]] + h_lines
 		model_yaml_text = '\n'.join(lines)
 	except StopIteration:
