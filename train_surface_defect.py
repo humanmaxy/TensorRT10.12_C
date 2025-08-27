@@ -9,7 +9,7 @@ import advanced_modules      # Import advanced enhancement modules
 
 def parse_args():
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--model', type=str, default='models/yolo11_surface_defect_backbone_enhanced.yaml')
+	parser.add_argument('--model', type=str, default='models/yolo11_surface_defect_safe_enhanced.yaml')
 	parser.add_argument('--data', type=str, default='data/surface_defect.yaml')
 	parser.add_argument('--epochs', type=int, default=200)
 	parser.add_argument('--batch', type=int, default=4)

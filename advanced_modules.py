@@ -219,8 +219,9 @@ class GhostConv_Enhanced(nn.Module):
 class C3k2_Enhanced(nn.Module):
     """
     增强的C3k2模块，集成多种注意力机制
+    Compatible with YOLO parameter parsing
     """
-    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, k=3, attention_type='se'):
+    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, attention_type='se'):
         super().__init__()
         c_ = int(c2 * e)
         self.cv1 = Conv(c1, c_, 1, 1)
@@ -237,7 +238,8 @@ class C3k2_Enhanced(nn.Module):
         else:
             self.attention = nn.Identity()
         
-        self.m = nn.Sequential(*(RepVGGBlock(c_, c_) for _ in range(n)))
+        # 使用简单的卷积层替代RepVGG避免复杂性
+        self.m = nn.Sequential(*(Conv(c_, c_, 3) for _ in range(n)))
 
     def forward(self, x):
         a = self.cv1(x)
