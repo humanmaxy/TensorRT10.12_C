@@ -1,0 +1,191 @@
+# Industrial YOLO11 for X-ray Weld Inspection
+# 基于改进YOLOv8算法的X光焊缝小目标检测配置
+# 集成蛇形可变形卷积和双向三阶金字塔(BiFPN)
+
+# 模型信息
+model_info:
+  name: "Industrial YOLO11 X-ray Detector"
+  version: "1.0.0"
+  target: "X光焊缝缺陷检测"
+  innovations:
+    - "蛇形可变形卷积 (Snake Deformable Convolution)"
+    - "双向三阶金字塔 (BiFPN)"
+    - "专用微缺陷检测头"
+    - "15微米级别检测能力"
+
+# 基础参数
+nc: 5  # 缺陷类别数: 气孔、裂纹、夹渣、未焊透、烧穿
+scales:  # [depth, width, max_channels]
+  n: [0.50, 0.25, 1024]  # nano - 速度优化
+  s: [0.50, 0.50, 1024]  # small - 平衡版本
+  m: [0.75, 0.75, 768]   # medium - 精度优化
+  l: [1.00, 1.00, 512]   # large - 微缺陷优化
+  x: [1.25, 1.25, 512]   # extra large - 最高精度
+
+# 增强主干网络 - 集成蛇形可变形卷积
+backbone:
+  # [from, repeats, module, args]
+  
+  # Stem层 - 初始特征提取
+  - [-1, 1, Conv, [64, 3, 2]]                    # 0-P1/2
+  - [-1, 1, Conv, [128, 3, 2]]                   # 1-P2/4
+  
+  # Stage 1: P2/4 - 小目标关键层，集成蛇形卷积
+  - [-1, 1, SEAttention, []]                     # 2 - SE注意力增强
+  - [-1, 2, C3k2_SnakeDeformable, [256, False, 1, 0.5]] # 3 - 蛇形可变形C3k2
+  - [-1, 1, Conv, [256, 3, 2]]                   # 4-P3/8
+  
+  # Stage 2: P3/8 - 中等目标，BiFPN增强
+  - [-1, 1, BiFPNBlock, [512, 3]]                # 5 - BiFPN特征融合
+  - [-1, 2, C3k2_Enhanced, [512, False, 1, 0.5, 'cbam']] # 6 - 增强C3k2 + CBAM
+  - [-1, 1, Conv, [512, 3, 2]]                   # 7-P4/16
+  
+  # Stage 3: P4/16 - 大目标检测，集成创新模块
+  - [-1, 1, TripleBiFPN, [512, 3, 2]]            # 8 - 三阶BiFPN
+  - [-1, 2, C3k2_SnakeDeformable, [512, True, 1, 0.5]]  # 9 - 蛇形可变形C3k2
+  - [-1, 1, CBAM, []]                            # 10 - CBAM注意力
+  - [-1, 1, Conv, [1024, 3, 2]]                  # 11-P5/32
+  
+  # Stage 4: P5/32 - 高级特征融合
+  - [-1, 2, C3k2_Enhanced, [1024, True, 1, 0.5, 'se']]   # 12 - 增强C3k2 + SE
+  - [-1, 1, SPP_Enhanced, [1024, 1024]]          # 13 - 增强SPP
+  - [-1, 1, MultiScaleBiFPN, [[1024], 1024]]     # 14 - 多尺度BiFPN
+  - [-1, 2, C2PSA, [1024]]                       # 15 - C2PSA保持兼容性
+
+# 增强检测头 - 集成BiFPN和微缺陷检测
+head:
+  # 特征金字塔构建 - 自顶向下路径
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]   # 16
+  - [[-1, 10], 1, Concat, [1]]                   # 17 - cat backbone P4 (CBAM增强特征)
+  - [-1, 1, BiFPNBlock, [512, 3]]                # 18 - BiFPN融合
+  - [-1, 2, C3k2_SnakeDeformable, [512, False, 1, 0.5]] # 19 (P4) - 蛇形增强
+  
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]   # 20
+  - [[-1, 6], 1, Concat, [1]]                    # 21 - cat backbone P3 (BiFPN增强特征)
+  - [-1, 1, TripleBiFPN, [256, 3, 2]]            # 22 - 三阶BiFPN
+  - [-1, 2, C3k2_Enhanced, [256, False, 1, 0.5, 'se']] # 23 (P3) - 增强特征提取
+  
+  # P2分支 - 关键的微小目标检测
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]   # 24
+  - [[-1, 3], 1, Concat, [1]]                    # 25 - cat backbone P2 (蛇形增强特征)
+  - [-1, 1, MultiScaleBiFPN, [[128], 128]]       # 26 - 多尺度BiFPN
+  - [-1, 2, C3k2_SnakeDeformable, [128, False, 1, 0.5]] # 27 (P2/4) - 蛇形小目标增强
+  - [-1, 1, MicroDefectAttention, [128]]         # 28 - 微缺陷注意力
+  
+  # 自底向上路径重建 - BiFPN双向融合
+  - [-1, 1, Conv, [128, 3, 2]]                   # 29
+  - [[-1, 23], 1, Concat, [1]]                   # 30
+  - [-1, 1, BiFPNBlock, [256, 3]]                # 31 - BiFPN双向融合
+  - [-1, 2, C3k2_Enhanced, [256, False, 1, 0.5, 'eca']] # 32 (P3/8) - ECA增强
+  
+  - [-1, 1, Conv, [256, 3, 2]]                   # 33
+  - [[-1, 19], 1, Concat, [1]]                   # 34
+  - [-1, 1, TripleBiFPN, [512, 3, 2]]            # 35 - 三阶BiFPN最终融合
+  - [-1, 2, C3k2_SnakeDeformable, [512, False, 1, 0.5]] # 36 (P4/16) - 蛇形增强
+  
+  - [-1, 1, Conv, [512, 3, 2]]                   # 37
+  - [[-1, 15], 1, Concat, [1]]                   # 38
+  - [-1, 2, C3k2_Enhanced, [1024, True, 1, 0.5, 'cbam']] # 39 (P5/32) - 最终CBAM
+  - [-1, 1, MultiScaleBiFPN, [[1024], 1024]]     # 40 - 最终多尺度融合
+
+  # 多尺度检测头 - 集成微缺陷检测能力
+  - [[28, 32, 36, 40], 1, EnhancedDetectHead, [nc]] # 41 - 四尺度增强检测
+
+# 缺陷类别定义
+defect_classes:
+  0: 
+    name: "气孔"
+    description: "焊缝中的球形气体空洞"
+    size_range: "15-500微米"
+    detection_challenge: "圆形微小目标"
+    
+  1:
+    name: "裂纹" 
+    description: "材料内部的线性断裂"
+    size_range: "10-2000微米"
+    detection_challenge: "不规则线性形状"
+    snake_conv_benefit: "蛇形卷积特别适用"
+    
+  2:
+    name: "夹渣"
+    description: "焊缝中的非金属夹杂物"
+    size_range: "100-5000微米"
+    detection_challenge: "不规则块状"
+    
+  3:
+    name: "未焊透"
+    description: "焊缝根部未完全熔合"
+    size_range: "500-10000微米"
+    detection_challenge: "线性缺陷"
+    
+  4:
+    name: "烧穿"
+    description: "焊接过热造成的孔洞"
+    size_range: "1000-20000微米"
+    detection_challenge: "大型不规则孔洞"
+
+# 训练优化配置
+training_config:
+  # 数据增强 - 针对X光图像优化
+  augmentation:
+    hsv_h: 0.01      # X光图像色调变化小
+    hsv_s: 0.3       # 饱和度适中调整
+    hsv_v: 0.6       # 亮度变化较大（模拟不同曝光）
+    degrees: 5.0     # 小角度旋转
+    translate: 0.05  # 小幅平移
+    scale: 0.3       # 缩放增强
+    shear: 1.0       # 轻微剪切
+    flipud: 0.5      # 垂直翻转
+    fliplr: 0.5      # 水平翻转
+    mosaic: 1.0      # 马赛克增强
+    mixup: 0.05      # 轻微混合
+    copy_paste: 0.1  # 复制粘贴增强
+    
+  # 损失函数权重
+  loss_weights:
+    box: 7.5         # 边界框损失权重
+    cls: 0.5         # 分类损失权重  
+    dfl: 1.5         # DFL损失权重
+    micro_defect: 2.0 # 微缺陷损失权重（新增）
+    
+  # 优化器配置
+  optimizer:
+    name: "AdamW"
+    lr0: 0.001       # 初始学习率（微缺陷检测需要更精细）
+    lrf: 0.01        # 最终学习率因子
+    momentum: 0.937
+    weight_decay: 0.0005
+    warmup_epochs: 3
+    warmup_momentum: 0.8
+    warmup_bias_lr: 0.1
+
+# 推理配置
+inference_config:
+  # NMS配置
+  conf_thres: 0.25     # 置信度阈值
+  iou_thres: 0.45      # IoU阈值
+  micro_conf_thres: 0.15 # 微缺陷专用置信度阈值
+  
+  # 后处理
+  max_det: 1000        # 最大检测数量
+  agnostic_nms: False  # 类别无关NMS
+  multi_label: False   # 多标签分类
+  
+  # 微缺陷特殊处理
+  micro_nms_iou: 0.3   # 微缺陷NMS IoU阈值（更小，避免漏检）
+  micro_min_size: 4    # 微缺陷最小像素大小
+
+# 性能基准
+performance_targets:
+  micro_porosity_recall: 0.92    # 微气孔检出率目标
+  crack_detection_improvement: 0.31  # 裂纹检测精度提升
+  detection_limit: "15微米"       # 检测下限
+  scale_span_multiplier: 3       # 相对传统方法的尺度跨度倍数
+  
+# 硬件要求
+hardware_requirements:
+  min_gpu_memory: "8GB"
+  recommended_gpu: "RTX 3080 / V100"
+  cpu_cores: 8
+  ram: "32GB"
+  storage: "100GB SSD"
