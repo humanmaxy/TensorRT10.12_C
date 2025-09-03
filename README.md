@@ -17,14 +17,17 @@ pip install -r requirements.txt
 
 ### 2. 验证模块注册
 ```bash
-# 运行测试脚本，确保自定义模块正确注册
-python test_registration.py
+# 快速验证（推荐先运行）
+python quick_verify.py
 
-# 测试模型创建（推荐）
+# 详细调试（如果有问题）
+python debug_model.py
+
+# 检查内置模块
+python check_builtin_modules.py
+
+# 完整测试套件
 python test_model_creation.py
-
-# 快速验证整个环境
-python quick_test.py
 ```
 
 ### 3. 准备数据集
