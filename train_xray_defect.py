@@ -15,7 +15,7 @@ print("✅ YOLO imported successfully")
 
 def parse_args():
     parser = argparse.ArgumentParser(description='X-ray Weld Defect Detection with Snake Conv + BiFPN')
-    parser.add_argument('--model', type=str, default='models/yolo11_snake_bifpn_simple.yaml', help='Model config path')
+    parser.add_argument('--model', type=str, default='models/yolo11_snake_bifpn_safe.yaml', help='Model config path')
     parser.add_argument('--data', type=str, default='data/xray_defects.yaml', help='Dataset config path')
     parser.add_argument('--epochs', type=int, default=300, help='Training epochs')
     parser.add_argument('--batch', type=int, default=16, help='Batch size')

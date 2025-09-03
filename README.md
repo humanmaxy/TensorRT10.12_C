@@ -17,17 +17,14 @@ pip install -r requirements.txt
 
 ### 2. 验证模块注册
 ```bash
-# 快速验证（推荐先运行）
-python quick_verify.py
+# 一站式修复和测试（推荐）
+python fix_and_test.py
+
+# 如果遇到tensor尺寸问题
+python debug_tensor_sizes.py
 
 # 详细调试（如果有问题）
 python debug_model.py
-
-# 检查内置模块
-python check_builtin_modules.py
-
-# 完整测试套件
-python test_model_creation.py
 ```
 
 ### 3. 准备数据集
@@ -45,15 +42,18 @@ data/xray_weld_defects/
 
 ### 4. 训练模型
 ```bash
-# 基础训练（使用简化版配置 - 推荐）
-python train_xray_defect.py --model models/yolo11_snake_bifpn_simple.yaml --data data/xray_defects.yaml
+# 基础训练（使用安全版配置 - 推荐）
+python train_xray_defect.py --data data/xray_defects.yaml
+
+# 指定配置文件
+python train_xray_defect.py --model models/yolo11_dimension_safe.yaml --data data/xray_defects.yaml
 
 # 微缺陷优化训练
-python train_xray_defect.py --model models/yolo11_snake_bifpn_simple.yaml --data data/xray_defects.yaml --micro-optimize
+python train_xray_defect.py --model models/yolo11_progressive.yaml --data data/xray_defects.yaml --micro-optimize
 
 # 自定义参数
 python train_xray_defect.py \
-    --model models/yolo11_snake_bifpn_simple.yaml \
+    --model models/yolo11_snake_bifpn_safe.yaml \
     --data data/xray_defects.yaml \
     --epochs 300 \
     --batch 16 \
