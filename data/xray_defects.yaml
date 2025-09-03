@@ -1,0 +1,105 @@
+# X-ray Weld Defect Dataset Configuration
+# X光焊缝缺陷检测数据集配置
+
+# Dataset paths
+path: data/xray_weld_defects  # Dataset root directory
+train: images/train           # Training images (relative to 'path')
+val: images/val              # Validation images (relative to 'path')
+test: images/test            # Test images (optional)
+
+# Classes - 5 types of weld defects
+nc: 5
+names:
+  0: porosity      # 气孔 - 15-500μm spherical gas cavities
+  1: crack         # 裂纹 - 10-2000μm linear/zigzag fractures  
+  2: slag          # 夹渣 - 100-5000μm irregular inclusions
+  3: incomplete    # 未焊透 - 500-10000μm incomplete penetration
+  4: burnthrough   # 烧穿 - 1000-20000μm burn-through holes
+
+# Defect characteristics for optimization
+defect_info:
+  porosity:
+    size_range: "15-500μm"
+    shape: "circular"
+    detection_difficulty: "very_high"  # Requires micro defect detection
+    min_pixels: 4                      # Minimum pixel size in 640x640 image
+    
+  crack:
+    size_range: "10-2000μm" 
+    shape: "linear/zigzag"
+    detection_difficulty: "extreme"    # Requires snake deformable conv
+    aspect_ratio: [5, 50]             # High aspect ratio
+    
+  slag:
+    size_range: "100-5000μm"
+    shape: "irregular"
+    detection_difficulty: "medium"
+    
+  incomplete:
+    size_range: "500-10000μm"
+    shape: "linear"
+    detection_difficulty: "medium"
+    
+  burnthrough:
+    size_range: "1000-20000μm"
+    shape: "circular/elliptical"
+    detection_difficulty: "low"
+
+# Training optimization settings
+training_settings:
+  # Image preprocessing
+  input_size: 640
+  normalize: true
+  
+  # Augmentation for X-ray images
+  augmentation:
+    rotation: 5.0        # Small rotation to preserve defect orientation
+    translation: 0.05    # Minimal translation
+    scaling: 0.3         # Moderate scaling
+    shearing: 1.0        # Light shearing
+    hsv_variation:
+      hue: 0.01         # Minimal hue change for X-ray
+      saturation: 0.3   # Moderate saturation
+      value: 0.6        # Higher value variation (exposure simulation)
+      
+  # Small object optimization
+  small_object_settings:
+    mosaic_prob: 1.0          # Always use mosaic for small objects
+    copy_paste_prob: 0.2      # Copy-paste augmentation for micro defects
+    mixup_alpha: 0.05         # Light mixup to preserve defect features
+    
+  # Loss function weights
+  loss_weights:
+    box_loss: 7.5             # Higher weight for precise localization
+    class_loss: 0.5           # Standard classification weight
+    dfl_loss: 1.5             # Distribution focal loss weight
+
+# Evaluation settings
+evaluation:
+  conf_threshold: 0.25        # Confidence threshold
+  iou_threshold: 0.45         # NMS IoU threshold
+  micro_conf_threshold: 0.15  # Lower threshold for micro defects
+  
+  # Performance targets (based on paper)
+  target_metrics:
+    porosity_recall: 0.92     # Target: 92% recall for porosity
+    crack_precision: 0.94     # Target: 31% improvement in crack detection
+    overall_map50: 0.85       # Target mAP@0.5
+    detection_limit: "15μm"   # Minimum detectable size
+
+# Dataset statistics (to be filled with actual data)
+dataset_stats:
+  total_images: 0
+  total_annotations: 0
+  class_distribution:
+    porosity: 0
+    crack: 0 
+    slag: 0
+    incomplete: 0
+    burnthrough: 0
+    
+  size_distribution:
+    micro: 0      # < 100 pixels
+    small: 0      # 100-500 pixels  
+    medium: 0     # 500-2000 pixels
+    large: 0      # > 2000 pixels

@@ -1,56 +1,22 @@
-# Industrial YOLO11 Requirements
-# 工业YOLO11 X光缺陷检测依赖包
+# Core Requirements for X-ray Defect Detection
+# 核心依赖包 - X光缺陷检测
 
-# 核心深度学习框架
+# Deep Learning Framework
 torch>=2.0.0
 torchvision>=0.15.0
-torchaudio>=2.0.0
 
-# YOLO框架
+# YOLO Framework
 ultralytics>=8.0.0
 
-# 数据处理
+# Essential packages
 numpy>=1.21.0
 opencv-python>=4.6.0
 Pillow>=9.0.0
-pandas>=1.3.0
-
-# 可视化
-matplotlib>=3.5.0
-seaborn>=0.11.0
-plotly>=5.0.0
-
-# 科学计算
-scipy>=1.7.0
-scikit-image>=0.19.0
-scikit-learn>=1.0.0
-
-# 配置和工具
 PyYAML>=6.0
+
+# Visualization (optional)
+matplotlib>=3.5.0
+
+# Training utilities
 tqdm>=4.62.0
 tensorboard>=2.8.0
-wandb>=0.12.0
-
-# 图像处理增强
-albumentations>=1.3.0
-imgaug>=0.4.0
-
-# 性能优化
-numba>=0.56.0
-psutil>=5.8.0
-
-# 可变形卷积支持（可选）
-# 如果需要真正的可变形卷积，可以安装：
-# mmcv-full>=1.6.0
-# mmdet>=2.25.0
-
-# 部署相关
-onnx>=1.12.0
-onnxruntime>=1.12.0
-tensorrt>=8.0.0  # NVIDIA GPU部署
-
-# 开发工具
-pytest>=7.0.0
-black>=22.0.0
-flake8>=4.0.0
-mypy>=0.950
