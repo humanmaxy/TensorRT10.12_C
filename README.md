@@ -19,6 +19,12 @@ pip install -r requirements.txt
 ```bash
 # 运行测试脚本，确保自定义模块正确注册
 python test_registration.py
+
+# 测试模型创建（推荐）
+python test_model_creation.py
+
+# 快速验证整个环境
+python quick_test.py
 ```
 
 ### 3. 准备数据集
@@ -36,15 +42,15 @@ data/xray_weld_defects/
 
 ### 4. 训练模型
 ```bash
-# 基础训练
-python train_xray_defect.py --model models/yolo11_snake_bifpn.yaml --data data/xray_defects.yaml
+# 基础训练（使用修复版配置）
+python train_xray_defect.py --model models/yolo11_snake_bifpn_fixed.yaml --data data/xray_defects.yaml
 
 # 微缺陷优化训练
-python train_xray_defect.py --model models/yolo11_snake_bifpn.yaml --data data/xray_defects.yaml --micro-optimize
+python train_xray_defect.py --model models/yolo11_snake_bifpn_fixed.yaml --data data/xray_defects.yaml --micro-optimize
 
 # 自定义参数
 python train_xray_defect.py \
-    --model models/yolo11_snake_bifpn.yaml \
+    --model models/yolo11_snake_bifpn_fixed.yaml \
     --data data/xray_defects.yaml \
     --epochs 300 \
     --batch 16 \
@@ -73,11 +79,25 @@ pip install ultralytics>=8.0.0
 python -c "from ultralytics import YOLO; print('OK')"
 ```
 
-### 问题3: YAML配置错误
+### 问题3: 模块参数错误 (missing required positional argument)
+**原因**: YAML配置中的模块参数不匹配构造函数
+
 **解决方案**:
-1. 检查YAML语法: `python -c "import yaml; yaml.safe_load(open('models/yolo11_snake_bifpn.yaml'))"`
+1. 使用修复版配置: `models/yolo11_snake_bifpn_fixed.yaml`
+2. 运行测试: `python test_model_creation.py`
+3. 检查模块参数格式: `[c1, c2, ...]` 而不是 `[c2]`
+
+### 问题4: YAML配置语法错误
+**解决方案**:
+1. 检查YAML语法: `python -c "import yaml; yaml.safe_load(open('models/yolo11_snake_bifpn_fixed.yaml'))"`
 2. 确保所有模块名与注册的名称一致
-3. 验证模块参数格式正确
+3. 验证参数列表格式正确
+
+### 问题5: 通道维度不匹配
+**解决方案**:
+1. 检查concat操作后的通道数计算
+2. 确保每个模块的输入输出通道匹配
+3. 使用固定版配置文件避免通道计算错误
 
 ## 📊 检测目标
 
