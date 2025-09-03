@@ -27,10 +27,11 @@ def test_model_creation():
         print(f"❌ Failed to import YOLO: {e}")
         return False
     
-    # 3. 测试修复版配置文件
+    # 3. 测试配置文件
     config_files = [
-        'models/yolo11_snake_bifpn_fixed.yaml',
-        'models/yolo11_snake_bifpn.yaml'  # 也测试原版本
+        'models/yolo11_snake_bifpn_simple.yaml',  # 简化版 - 推荐
+        'models/yolo11_snake_bifpn_fixed.yaml',   # 修复版
+        'models/yolo11_snake_bifpn.yaml'          # 原版本
     ]
     
     for config_file in config_files:
@@ -85,6 +86,7 @@ def test_individual_modules():
             SnakeDeformableConv, C3k2_SnakeDeformable,
             BiFPNBlock, TripleBiFPN, MicroDefectAttention
         )
+        from simple_modules import C3k2
         
         import torch
         
@@ -93,6 +95,7 @@ def test_individual_modules():
         
         # 测试各个模块
         modules_to_test = [
+            ("C3k2", C3k2, [128, 256]),
             ("SnakeDeformableConv", SnakeDeformableConv, [128, 256]),
             ("C3k2_SnakeDeformable", C3k2_SnakeDeformable, [128, 256]),
             ("BiFPNBlock", BiFPNBlock, [128, 256]),

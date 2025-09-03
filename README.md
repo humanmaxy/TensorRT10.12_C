@@ -42,15 +42,15 @@ data/xray_weld_defects/
 
 ### 4. 训练模型
 ```bash
-# 基础训练（使用修复版配置）
-python train_xray_defect.py --model models/yolo11_snake_bifpn_fixed.yaml --data data/xray_defects.yaml
+# 基础训练（使用简化版配置 - 推荐）
+python train_xray_defect.py --model models/yolo11_snake_bifpn_simple.yaml --data data/xray_defects.yaml
 
 # 微缺陷优化训练
-python train_xray_defect.py --model models/yolo11_snake_bifpn_fixed.yaml --data data/xray_defects.yaml --micro-optimize
+python train_xray_defect.py --model models/yolo11_snake_bifpn_simple.yaml --data data/xray_defects.yaml --micro-optimize
 
 # 自定义参数
 python train_xray_defect.py \
-    --model models/yolo11_snake_bifpn_fixed.yaml \
+    --model models/yolo11_snake_bifpn_simple.yaml \
     --data data/xray_defects.yaml \
     --epochs 300 \
     --batch 16 \
@@ -97,7 +97,15 @@ python -c "from ultralytics import YOLO; print('OK')"
 **解决方案**:
 1. 检查concat操作后的通道数计算
 2. 确保每个模块的输入输出通道匹配
-3. 使用固定版配置文件避免通道计算错误
+3. 使用简化版配置文件避免通道计算错误
+
+### 问题6: 字符串参数重复错误 (invalid literal for int() with base 10: 'cbamcbam...')
+**原因**: YAML配置中的字符串参数被重复解析
+
+**解决方案**:
+1. 使用简化版配置: `models/yolo11_snake_bifpn_simple.yaml` (推荐)
+2. 避免复杂的字符串参数，使用标准模块
+3. 检查模块构造函数参数顺序是否正确
 
 ## 📊 检测目标
 

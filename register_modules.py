@@ -20,12 +20,18 @@ def register_all_modules():
         RepVGGBlock, GhostConv_Enhanced, C3k2_Enhanced, ASFF
     )
     
+    # 导入简单模块
+    from simple_modules import C3k2
+    
     # 尝试多种注册方式
     registration_success = False
     
     # 方法1: 注册到 ultralytics.nn.tasks
     try:
         import ultralytics.nn.tasks as tasks
+        
+        # Simple modules
+        tasks.C3k2 = C3k2
         
         # Snake Deformable Conv modules
         tasks.SnakeDeformableConv = SnakeDeformableConv
@@ -65,6 +71,7 @@ def register_all_modules():
         
         # 添加所有模块到modules命名空间
         module_dict = {
+            'C3k2': C3k2,
             'SnakeDeformableConv': SnakeDeformableConv,
             'C3k2_SnakeDeformable': C3k2_SnakeDeformable,
             'BiFPNLayer': BiFPNLayer,
