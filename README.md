@@ -33,13 +33,13 @@
 
 ```
 workspace/
-├── 🔬 core_modules_final.py        # 四大功能核心模块
-├── 🎓 train_core_final.py          # 优化训练脚本
-├── 🔧 advanced_modules.py          # 增强注意力模块
-├── 📋 README_CLEAN.md              # 最终说明文档
+├── 🎓 train_ultra_simple.py        # 超简训练脚本
+├── 🧪 verify_final.py              # 最终验证脚本
+├── 🔧 advanced_modules.py          # 现有增强模块 (SE/CBAM/ECA)
+├── 📋 README.md                    # 项目说明
 ├── 📦 requirements.txt             # 依赖包
 ├── models/
-│   └── 📄 yolo11_core_final.yaml   # 最终配置文件
+│   └── 📄 yolo11_ultra_simple.yaml # 超简配置文件
 └── data/
     └── 📄 xray_defects.yaml        # 数据集配置
 ```
@@ -53,16 +53,16 @@ pip install -r requirements.txt
 
 ### 2. 验证功能
 ```bash
-python test_core_final.py
+python verify_final.py
 ```
 
 ### 3. 开始训练
 ```bash
 # 基础训练
-python train_core_final.py --data data/xray_defects.yaml
+python train_ultra_simple.py --data data/xray_defects.yaml
 
 # 微缺陷优化训练（推荐）
-python train_core_final.py \
+python train_ultra_simple.py \
     --data data/xray_defects.yaml \
     --micro-optimize \
     --imgsz 832 \

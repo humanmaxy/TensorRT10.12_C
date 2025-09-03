@@ -27,19 +27,24 @@ class MicroDefectHead(nn.Module):
             Conv(c2, c2, 1, 1),     # 1x1卷积
         )
         
-        # 通道注意力 - 专门用于微小目标
-        mid_channels = max(c2 // reduction, 16)
-        self.channel_att = nn.Sequential(
-            nn.AdaptiveAvgPool2d(1),
-            nn.Conv2d(c2, mid_channels, 1, bias=False),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(mid_channels, c2, 1, bias=False),
-            nn.Sigmoid()
-        )
+        # 通道注意力 - 自适应版本
+        self.reduction = reduction
+        self.channel_att = None  # 延迟初始化
         
         # 空间注意力 - 专门用于微小区域
         self.spatial_att = nn.Sequential(
             nn.Conv2d(2, 1, 7, padding=3, bias=False),
+            nn.Sigmoid()
+        )
+        
+    def _build_channel_att(self, channels):
+        """构建通道注意力"""
+        mid_channels = max(channels // self.reduction, 8)
+        return nn.Sequential(
+            nn.AdaptiveAvgPool2d(1),
+            nn.Conv2d(channels, mid_channels, 1, bias=False),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(mid_channels, channels, 1, bias=False),
             nn.Sigmoid()
         )
         
@@ -49,6 +54,11 @@ class MicroDefectHead(nn.Module):
         
         # 特征增强
         enhanced = self.enhance(x)
+        
+        # 构建通道注意力（如果还没有）
+        if self.channel_att is None:
+            self.channel_att = self._build_channel_att(enhanced.size(1))
+            self.channel_att = self.channel_att.to(enhanced.device)
         
         # 通道注意力
         ca = self.channel_att(enhanced)
@@ -170,20 +180,28 @@ class EnhancedC2f(nn.Module):
 
 class SmallObjectAttention(nn.Module):
     """
-    小目标注意力 - 避免c1==c2断言问题
-    专门用于小目标检测优化
+    小目标注意力 - 自适应通道版本
+    专门用于小目标检测优化，自动适应输入通道数
     """
-    def __init__(self, channels, reduction=8):
+    def __init__(self, channels=None, reduction=8):
         super().__init__()
-        # 避免断言问题，不要求输入输出通道相等
-        mid_channels = max(channels // reduction, 8)
+        self.channels = channels
+        self.reduction = reduction
+        
+        # 延迟初始化，在第一次forward时根据输入通道数初始化
+        self.channel_att = None
+        self.spatial_att = None
+        
+    def _build_attention(self, input_channels):
+        """根据输入通道数构建注意力模块"""
+        mid_channels = max(input_channels // self.reduction, 8)
         
         # 通道注意力
         self.channel_att = nn.Sequential(
             nn.AdaptiveAvgPool2d(1),
-            nn.Conv2d(channels, mid_channels, 1, bias=False),
+            nn.Conv2d(input_channels, mid_channels, 1, bias=False),
             nn.ReLU(inplace=True),
-            nn.Conv2d(mid_channels, channels, 1, bias=False),
+            nn.Conv2d(mid_channels, input_channels, 1, bias=False),
             nn.Sigmoid()
         )
         
@@ -193,7 +211,16 @@ class SmallObjectAttention(nn.Module):
             nn.Sigmoid()
         )
         
+        # 移动到正确的设备
+        device = next(iter(self.parameters())).device if list(self.parameters()) else 'cpu'
+        self.channel_att = self.channel_att.to(device)
+        self.spatial_att = self.spatial_att.to(device)
+        
     def forward(self, x):
+        # 第一次运行时构建注意力模块
+        if self.channel_att is None:
+            self._build_attention(x.size(1))
+        
         # 通道注意力
         ca = self.channel_att(x)
         x = x * ca
