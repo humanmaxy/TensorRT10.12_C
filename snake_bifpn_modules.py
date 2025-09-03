@@ -373,6 +373,7 @@ class DFL(nn.Module):
 def register_snake_bifpn_modules():
     """注册模块到ultralytics"""
     try:
+        # 方法1: 注册到 ultralytics.nn.tasks
         import ultralytics.nn.tasks as tasks
         
         # 注册蛇形可变形卷积模块
@@ -389,15 +390,53 @@ def register_snake_bifpn_modules():
         tasks.MicroDefectAttention = MicroDefectAttention
         tasks.EnhancedDetectHead = EnhancedDetectHead
         
-        print("✅ Snake Deformable Conv + BiFPN modules registered successfully!")
-        return True
+        print("✅ Registered to ultralytics.nn.tasks")
         
-    except ImportError as e:
-        print(f"⚠️ Warning: ultralytics not available - {e}")
-        return False
+    except Exception as e:
+        print(f"⚠️ Failed to register to tasks: {e}")
+    
+    try:
+        # 方法2: 注册到 ultralytics.nn.modules
+        import ultralytics.nn.modules as modules
+        
+        # 注册所有模块
+        modules.SnakeDeformableConv = SnakeDeformableConv
+        modules.C3k2_SnakeDeformable = C3k2_SnakeDeformable
+        modules.BiFPNLayer = BiFPNLayer
+        modules.BiFPNBlock = BiFPNBlock
+        modules.TripleBiFPN = TripleBiFPN
+        modules.MultiScaleBiFPN = MultiScaleBiFPN
+        modules.MicroDefectAttention = MicroDefectAttention
+        modules.EnhancedDetectHead = EnhancedDetectHead
+        
+        print("✅ Registered to ultralytics.nn.modules")
+        
+    except Exception as e:
+        print(f"⚠️ Failed to register to modules: {e}")
+    
+    try:
+        # 方法3: 添加到全局命名空间
+        import sys
+        current_module = sys.modules[__name__]
+        
+        # 将模块添加到当前模块的全局命名空间
+        globals()['SnakeDeformableConv'] = SnakeDeformableConv
+        globals()['C3k2_SnakeDeformable'] = C3k2_SnakeDeformable
+        globals()['BiFPNLayer'] = BiFPNLayer
+        globals()['BiFPNBlock'] = BiFPNBlock
+        globals()['TripleBiFPN'] = TripleBiFPN
+        globals()['MultiScaleBiFPN'] = MultiScaleBiFPN
+        globals()['MicroDefectAttention'] = MicroDefectAttention
+        globals()['EnhancedDetectHead'] = EnhancedDetectHead
+        
+        print("✅ Added to global namespace")
+        
+    except Exception as e:
+        print(f"⚠️ Failed to add to globals: {e}")
+        
+    print("🐍 Snake Deformable Conv + BiFPN modules registration completed!")
+    return True
 
 
-# 自动注册模块
-if __name__ == "__main__":
-    register_snake_bifpn_modules()
-    print("Snake Deformable Conv + BiFPN modules loaded!")
+# 立即注册模块
+register_snake_bifpn_modules()

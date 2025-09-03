@@ -6,6 +6,9 @@
 workspace/
 ├── 🐍 snake_bifpn_modules.py          # 核心模块：蛇形卷积+BiFPN+微缺陷检测
 ├── 🎓 train_xray_defect.py            # 简练训练脚本
+├── 🔧 register_modules.py             # 模块注册系统
+├── 🧪 test_registration.py            # 注册测试脚本
+├── ⚡ quick_test.py                   # 快速验证脚本
 ├── 📋 README.md                       # 项目说明
 ├── 📦 requirements.txt                # 依赖包列表
 ├── 🔧 advanced_modules.py             # 增强注意力模块 (SE/CBAM/ECA等)

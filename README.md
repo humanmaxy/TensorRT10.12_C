@@ -15,7 +15,13 @@
 pip install -r requirements.txt
 ```
 
-### 2. 准备数据集
+### 2. 验证模块注册
+```bash
+# 运行测试脚本，确保自定义模块正确注册
+python test_registration.py
+```
+
+### 3. 准备数据集
 ```
 data/xray_weld_defects/
 ├── images/
@@ -28,7 +34,7 @@ data/xray_weld_defects/
     └── test/
 ```
 
-### 3. 训练模型
+### 4. 训练模型
 ```bash
 # 基础训练
 python train_xray_defect.py --model models/yolo11_snake_bifpn.yaml --data data/xray_defects.yaml
@@ -45,6 +51,33 @@ python train_xray_defect.py \
     --imgsz 640 \
     --device 0
 ```
+
+## 🔧 故障排除
+
+### 问题1: KeyError 'C3k2_SnakeDeformable'
+**原因**: 自定义模块未正确注册到ultralytics框架
+
+**解决方案**:
+1. 运行测试脚本验证: `python test_registration.py`
+2. 确保在导入YOLO之前先注册模块
+3. 检查ultralytics版本是否兼容: `pip show ultralytics`
+
+### 问题2: 模块导入失败
+**解决方案**:
+```bash
+# 重新安装ultralytics
+pip uninstall ultralytics
+pip install ultralytics>=8.0.0
+
+# 验证安装
+python -c "from ultralytics import YOLO; print('OK')"
+```
+
+### 问题3: YAML配置错误
+**解决方案**:
+1. 检查YAML语法: `python -c "import yaml; yaml.safe_load(open('models/yolo11_snake_bifpn.yaml'))"`
+2. 确保所有模块名与注册的名称一致
+3. 验证模块参数格式正确
 
 ## 📊 检测目标
 

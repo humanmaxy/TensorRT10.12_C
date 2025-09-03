@@ -1,10 +1,16 @@
 import os
 import argparse
-from ultralytics import YOLO
 
-# Import custom modules - Snake Deformable Conv + BiFPN
-import snake_bifpn_modules  # This automatically registers our custom modules
-import advanced_modules     # Import enhanced attention mechanisms
+# IMPORTANT: Register custom modules BEFORE importing YOLO
+print("📦 Registering custom modules...")
+
+# Use the comprehensive registration system
+from register_modules import register_all_modules
+register_all_modules()
+
+# Now import YOLO after modules are registered
+from ultralytics import YOLO
+print("✅ YOLO imported successfully")
 
 
 def parse_args():
@@ -31,8 +37,39 @@ def main():
     print(f"Model: {args.model}")
     print(f"Data: {args.data}")
     
+    # Verify custom modules are available
+    print("🔍 Verifying custom modules...")
+    try:
+        import ultralytics.nn.tasks as tasks
+        key_modules = ['C3k2_SnakeDeformable', 'BiFPNBlock', 'MicroDefectAttention', 'SEAttention']
+        for module_name in key_modules:
+            if hasattr(tasks, module_name):
+                print(f"  ✅ {module_name} - Available")
+            else:
+                print(f"  ❌ {module_name} - Missing")
+                
+        # Also check if model file exists
+        if not os.path.exists(args.model):
+            print(f"❌ Model file not found: {args.model}")
+            return
+        else:
+            print(f"✅ Model file found: {args.model}")
+            
+    except Exception as e:
+        print(f"⚠️ Module verification failed: {e}")
+    
     # Create model from YAML config
-    model = YOLO(args.model)
+    print("🏗️ Creating model...")
+    try:
+        model = YOLO(args.model)
+        print("✅ Model created successfully!")
+    except Exception as e:
+        print(f"❌ Failed to create model: {e}")
+        print("\n🔧 Troubleshooting tips:")
+        print("1. Make sure all custom modules are properly registered")
+        print("2. Check if the YAML file syntax is correct")
+        print("3. Verify all module names in the YAML match registered modules")
+        return
     
     # Load pretrained weights if provided
     if args.weights and os.path.exists(args.weights):
