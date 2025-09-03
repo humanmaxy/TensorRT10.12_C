@@ -46,18 +46,20 @@ class C3k2_SnakeDeformable(nn.Module):
     """
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):
         super().__init__()
-        c_ = int(c2 * e)
-        self.cv1 = Conv(c1, c_, 1, 1)
-        self.cv2 = Conv(c1, c_, 1, 1)
-        self.cv3 = Conv(2 * c_, c2, 1)
+        c_ = int(c2 * e)  # 中间通道数
+        self.cv1 = Conv(c1, c_, 1, 1)  # 输入到中间通道
+        self.cv2 = Conv(c1, c_, 1, 1)  # 输入到中间通道
+        self.cv3 = Conv(2 * c_, c2, 1)  # 合并后到输出通道
+        self.add = shortcut and c1 == c2
         
-        # 使用蛇形可变形卷积
+        # 使用蛇形可变形卷积，注意通道数匹配
         self.m = nn.Sequential(*(
             SnakeDeformableConv(c_, c_, 3, 1, 1) for _ in range(n)
         ))
         
     def forward(self, x):
-        return self.cv3(torch.cat((self.m(self.cv1(x)), self.cv2(x)), 1))
+        y = self.cv3(torch.cat((self.m(self.cv1(x)), self.cv2(x)), 1))
+        return x + y if self.add else y
 
 
 class FastNormalizedFusion(nn.Module):
