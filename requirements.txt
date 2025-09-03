@@ -1,0 +1,22 @@
+# Core Requirements for X-ray Defect Detection
+# 核心依赖包 - X光缺陷检测
+
+# Deep Learning Framework
+torch>=2.0.0
+torchvision>=0.15.0
+
+# YOLO Framework
+ultralytics>=8.0.0
+
+# Essential packages
+numpy>=1.21.0
+opencv-python>=4.6.0
+Pillow>=9.0.0
+PyYAML>=6.0
+
+# Visualization (optional)
+matplotlib>=3.5.0
+
+# Training utilities
+tqdm>=4.62.0
+tensorboard>=2.8.0
