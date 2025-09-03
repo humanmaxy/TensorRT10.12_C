@@ -53,21 +53,29 @@ pip install -r requirements.txt
 
 ### 2. 验证功能
 ```bash
+# 测试不同scales配置，找到可工作的版本
+python test_scales.py
+
+# 验证最终版本
 python verify_final.py
 ```
 
 ### 3. 开始训练
 ```bash
-# 基础训练
-python train_ultra_simple.py --data data/xray_defects.yaml
+# 使用修复scales的训练脚本（推荐）
+python train_fixed_scales.py --data data/xray_defects.yaml --scale s
 
-# 微缺陷优化训练（推荐）
-python train_ultra_simple.py \
+# 微缺陷优化训练
+python train_fixed_scales.py \
     --data data/xray_defects.yaml \
+    --scale s \
     --micro-optimize \
     --imgsz 832 \
     --batch 8 \
     --epochs 300
+
+# 如果scales问题仍然存在，使用超简版本
+python train_ultra_simple.py --data data/xray_defects.yaml
 ```
 
 ## 🔬 网络架构
